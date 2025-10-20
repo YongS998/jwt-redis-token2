@@ -2,7 +2,7 @@ package com.yongs.token2.utils;
 
 import com.yongs.token2.exception.BusinessException;
 import com.yongs.token2.properties.JwtProperties;
-import com.yongs.token2.service.RefreshTokenVersionService;
+import com.yongs.token2.service.TokenVersionService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -26,7 +26,7 @@ public class JwtUtil {
     private final SecretKey secretKey;
 
     @Autowired
-    private RefreshTokenVersionService refreshTokenVersionService;
+    private TokenVersionService tokenVersionService;
 
     /**
      * 注入配置及SecretKey构造
@@ -43,8 +43,10 @@ public class JwtUtil {
      * 生成accessToken
      */
     public String generateAccessToken(String username){
+        Long version = tokenVersionService.getUserAccessVersion(username);
         Map<String,Object> claims = new HashMap<>();
         claims.put("type","access");
+        claims.put("ver",version);
         return buildToken(
                 claims,
                 username,
@@ -56,7 +58,7 @@ public class JwtUtil {
      * 生成refreshToken方法
      */
     public String generateRefreshToken(String username){
-        Long version = refreshTokenVersionService.getUserRefreshVersion(username);
+        Long version = tokenVersionService.getUserRefreshVersion(username);
         Map<String,Object> claims = new HashMap<>();
         claims.put("type","refresh");
         claims.put("ver",version);
@@ -121,7 +123,13 @@ public class JwtUtil {
         }
 
         String type = getTypeFromToken(token);
-        return "access".equals(type);
+        if (!"access".equals(type))return false;
+
+        String username = getUsernameFromToken(token);
+        Long tokenVersion = getClaimsFromToken(token).get("ver", Long.class);
+        Long currentVersion = tokenVersionService.getUserAccessVersion(username);
+
+        return tokenVersion != null && tokenVersion.equals(currentVersion);
     }
 
     /**
@@ -137,7 +145,7 @@ public class JwtUtil {
 
         String username = getUsernameFromToken(token);
         Long tokenVersion = getClaimsFromToken(token).get("ver", Long.class);
-        Long currentVersion = refreshTokenVersionService.getUserRefreshVersion(username);
+        Long currentVersion = tokenVersionService.getUserRefreshVersion(username);
 
         return tokenVersion!=null && tokenVersion.equals(currentVersion);
     }

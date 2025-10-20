@@ -46,7 +46,7 @@ public class AuthService {
     @Autowired
     private OnlineUserService onlineUserService;
     @Autowired
-    private RefreshTokenVersionService refreshTokenVersionService;
+    private TokenVersionService tokenVersionService;
     @Autowired
     private SecurityUtil securityUtil;
 
@@ -72,8 +72,9 @@ public class AuthService {
             String username = userDetails.getUsername();
 
             //4.生成token
-            //4.0作废所有旧Refresh Token，版本号自增
-            refreshTokenVersionService.incrementRefreshVersion(username);
+            //4.0作废所有旧Refresh和Access Token，版本号自增
+            tokenVersionService.incrementRefreshVersion(username);
+            tokenVersionService.incrementAccessVersion(username);
             //4.1生成access token
             String accessToken = jwtUtil.generateAccessToken(username);
             //4.2生成refresh token
@@ -148,7 +149,8 @@ public class AuthService {
     public Result logout(HttpServletRequest request) {
         String username = securityUtil.getCurrentUsername();
 
-        refreshTokenVersionService.incrementRefreshVersion(username);
+        tokenVersionService.incrementRefreshVersion(username);
+        tokenVersionService.incrementAccessVersion(username);
         onlineUserService.makeUserOffline(username);
 
         SecurityContextHolder.clearContext();

@@ -2,7 +2,7 @@ package com.yongs.token2.controller;
 
 import com.yongs.token2.pojo.Result;
 import com.yongs.token2.service.OnlineUserService;
-import com.yongs.token2.service.RefreshTokenVersionService;
+import com.yongs.token2.service.TokenVersionService;
 import com.yongs.token2.utils.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +20,7 @@ import java.util.Set;
 public class AdminController {
 
     @Autowired
-    private RefreshTokenVersionService refreshTokenVersionService;
+    private TokenVersionService tokenVersionService;
     @Autowired
     private OnlineUserService onlineUserService;
     @Autowired
@@ -52,7 +52,9 @@ public class AdminController {
         }
 
         //作废 refresh Token
-        refreshTokenVersionService.incrementRefreshVersion(username);
+        tokenVersionService.incrementRefreshVersion(username);
+        //作废 access token
+        tokenVersionService.incrementAccessVersion(username);
         onlineUserService.makeUserOffline(username);
 
         return Result.success();
